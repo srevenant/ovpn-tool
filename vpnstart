@@ -29,7 +29,7 @@ terminal_title() {
     printf "\033]0;$@\007"
 }
 
-terminal_title "$key VPN Session"
+terminal_title "vpn.$key"
 
 if [ `id -u` != 0 ]; then
     sname=$(basename $0)
@@ -38,10 +38,11 @@ if [ `id -u` != 0 ]; then
 else
     umask 077
     export PATH=/usr/local/sbin:/usr/local/bin:$PATH
-    echo -n "==> Decode Key "
+    echo -n "==> Auth Key credentials in "
     gpg -d $key.auth.gpg > $key.auth
-    echo -n "==> OTP Code: "
+    printf "==> MFA Authentication at $(date)\nEnter Security Code: "
     read -s otp_pass
+	printf "\r                    \r\n"
     sed -i -e "s/%{OTP}$/$otp_pass/g" $key.auth
 
     cleanup() {
