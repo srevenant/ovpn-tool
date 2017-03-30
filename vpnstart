@@ -1,0 +1,49 @@
+#!/bin/bash
+
+sbase=$(dirname $0)
+sbase=$(cd $sbase; pwd)
+
+key=$1
+base=$2
+
+if [ ! $base ]; then
+	base=~/.ovpn
+fi
+
+cd $base
+keys=$(ls -1 *.ovpn|sed -e 's/\.ovpn$//')
+
+if [ ! -f $key.ovpn ]; then
+	printf "Specify a key to use: "
+	echo $keys
+	exit 1
+fi
+
+terminal_title() {
+	printf "\033]0;$@\007"
+}
+
+terminal_title "VPN Session"
+
+if [ `id -u` != 0 ]; then
+	sname=$(basename $0)
+	script=$sbase/$sname
+	exec sudo $script $key $base
+else
+    umask 077
+	export PATH=/usr/local/sbin:/usr/local/bin:$PATH
+    echo -n "==> Decode Key "
+    gpg -d $key.auth.gpg > $key.auth
+	echo -n "==> Input OTP Code: "
+	read -s otp_pass
+    sed -i -e "s/%{OTP}$/$otp_pass/g" $key.auth
+
+    cleanup() {
+        sleep 10
+        rm -f $key.auth
+    }
+    cleanup &
+
+	exec openvpn --config $key.ovpn
+fi
+
