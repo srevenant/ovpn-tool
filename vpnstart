@@ -12,18 +12,24 @@ fi
 
 cd $base
 keys=$(ls -1 *.ovpn|sed -e 's/\.ovpn$//')
+count=$(echo "$keys" | wc -l)
 
 if [ ! -f $key.ovpn ]; then
-    printf "Specify a key to use: "
-    echo $keys
-    exit 1
+    if [ $count = 1 ]; then
+        key=$keys
+		echo "No key specified, defaulting to $keys"
+	else
+	    printf "Specify a key to use: "
+	    echo $keys
+	    exit 1
+	fi
 fi
 
 terminal_title() {
     printf "\033]0;$@\007"
 }
 
-terminal_title "VPN Session"
+terminal_title "$key VPN Session"
 
 if [ `id -u` != 0 ]; then
     sname=$(basename $0)
@@ -34,7 +40,7 @@ else
     export PATH=/usr/local/sbin:/usr/local/bin:$PATH
     echo -n "==> Decode Key "
     gpg -d $key.auth.gpg > $key.auth
-    echo -n "==> Input OTP Code: "
+    echo -n "==> OTP Code: "
     read -s otp_pass
     sed -i -e "s/%{OTP}$/$otp_pass/g" $key.auth
 
