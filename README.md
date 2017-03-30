@@ -19,9 +19,11 @@ Put your key and files in this location.  Supports multiple keys, with the key/t
 create {name}.auth formatted as:
 
 	username
-	password
+	password%{OTP}
 
-And encrypt it with the following (use a strong pass phrase):
+The %{OTP} section will be replaced with your one time password for MFA, at each run time.
+
+Encrypt the resulting file with the following (use a strong pass phrase):
 
 	gpg -c {name}.auth
 
