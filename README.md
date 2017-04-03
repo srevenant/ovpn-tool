@@ -11,31 +11,26 @@ This is not ideal as it still bounces the username/password off disk, to pass it
 	chmod 755 /etc/openvpn/update-resolv-conf
 	cp vpnstart ~/bin
 
-## Setup MacOS/Darwin Host
-
-	brew install openvpn gpg
-	cp update-resolv-conf /etc/openvpn/update-resolv-conf
-	chmod 755 /etc/openvpn/update-resolv-conf
-	cp vpnstart ~/bin
-
 ## Setup A key
 
 	mkdir ~/.ovpn
 
-Put your key and files in this location.  Supports multiple keys, with the key/token name being the {name}.ovpn (in all cases replace {name} with your key name, such as 'prod').
+Put your config and files in this location.  Supports multiple config, with the config/token name being the {name}.ovpn.
 
-create {name}.auth formatted as:
+### Setup secured auth delegation
+
+You can configure an encrypted passfile using GPG.  First, create a base file such as `onelogin.auth` and format it as:
 
 	username
 	password%{OTP}
 
-The %{OTP} section will be replaced with your one time password for MFA, at each run time.
+Of course with your username and password.  The %{OTP} section will be replaced with your one time password for MFA each time it is run.
 
-Encrypt the resulting file with the following (use a strong pass phrase):
+Then encrypt this file with a strong passphrase (multiple character types, over 32 chars in length):
 
-	gpg -c {name}.auth
+	gpg -c onelogin.auth
 
-Add to {name}.ovpn:
+Add to your configuration ({name}.ovpn)
 
 	auth-user-pass {name}.auth
 	up /etc/openvpn/update-resolv-conf
