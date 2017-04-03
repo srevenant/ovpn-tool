@@ -6,6 +6,14 @@ This is not ideal as it still bounces the username/password off disk, to pass it
 
 ## Setup Fedora/CentOS/RHEL Host
 
+	dnf -y install openvpn gpg
+	cp update-resolv-conf /etc/openvpn/update-resolv-conf
+	chmod 755 /etc/openvpn/update-resolv-conf
+	cp vpnstart ~/bin
+
+## Setup MacOS/Darwin Host
+
+	brew install openvpn gpg
 	cp update-resolv-conf /etc/openvpn/update-resolv-conf
 	chmod 755 /etc/openvpn/update-resolv-conf
 	cp vpnstart ~/bin

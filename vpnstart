@@ -34,22 +34,24 @@ terminal_title "vpn.$key"
 if [ `id -u` != 0 ]; then
     sname=$(basename $0)
     script=$sbase/$sname
+    echo "==> Switching to root with sudo..."
     exec sudo $script $key $base
 else
     umask 077
     export PATH=/usr/local/sbin:/usr/local/bin:$PATH
     echo -n "==> Auth Key credentials in "
-    if ! gpg -d $key.auth.gpg > $key.auth; then
+    secretfile=$(grep auth-user-pass $key.ovpn | awk '{print $2}')
+    if ! gpg -d $secretfile.gpg > $secretfile; then
          exit 1
     fi
     printf "==> MFA Authentication at $(date)\nEnter Security Code: "
     read -s otp_pass
     printf "\r                    \r\n"
-    sed -i -e "s/%{OTP}$/$otp_pass/g" $key.auth
+    sed -i -e "s/%{OTP}$/$otp_pass/g" $secretfile
 
     cleanup() {
         sleep 10
-        rm -f $key.auth
+        rm -f $secretfile
     }
     cleanup &
 

@@ -56,10 +56,10 @@ END
         print OUT "nameserver $svr\n";
 	}
     close(OUT);
-    chmod($resconf, 0644);
 } elsif ($script_type eq "down") {
     if (-f "$resconf.pre:$dev") {
         rename("$resconf.pre:$dev", $resconf);
     }
 }
+chmod(0644, $resconf);
 
