@@ -51,7 +51,10 @@ else
 
     cleanup() {
         sleep 10
-        rm -f $secretfile
+		if [ $(ps -eaf|grep vpnstart|grep -v grep|wc -l) -gt 1 ]; then
+            exit
+		fi
+     	rm -f $secretfile
     }
     cleanup &
 

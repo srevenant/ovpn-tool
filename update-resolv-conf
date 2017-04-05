@@ -43,7 +43,7 @@ if ($script_type eq "up") {
         }
     }
 
-    system("cp", $resconf, "$resconf.pre:$dev");
+    rename($resconf, "$resconf.pre:$dev");
     open(OUT, ">", $resconf) || die("Unable to open ($resconf): $!");
     my $srch = join(" ", @search);
     &log("dns search $srch");
