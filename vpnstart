@@ -1,63 +1,175 @@
-#!/bin/bash
+#!/usr/bin/env python
+# vim:set expandtab ts=4 sw=4 ai ft=python:
+"""
+Wrapper for openvpn in linux, also doing:
 
-sbase=$(dirname $0)
-sbase=$(cd $sbase; pwd)
+* variable keys 
+* MFA
+* better handling of dns options
 
-key=$1
-base=$2
+"""
 
-if [ ! $base ]; then
-	base=~/.ovpn
-fi
+import sys
+import os
+import os.path
+import re
+import subprocess
+import time
+import requests
+from multiprocessing import Process
 
-cd $base
-keys=$(ls -1 *.ovpn|sed -e 's/\.ovpn$//')
-count=$(echo "$keys" | wc -l)
+# python 2/3 compat
+try:
+   input = raw_input
+except NameError:
+   pass
 
-if [ ! -f $key.ovpn ]; then
-	if [ $count = 1 ]; then
-		key=$keys
-		echo "No key specified, defaulting to $keys"
-	else
-		printf "Specify a key to use: "
-		echo $keys
-		exit 1
-	fi
-fi
+def which(file):
+    for path in os.environ["PATH"].split(os.pathsep):
+        if os.path.exists(os.path.join(path, file)):
+            return os.path.join(path, file)
+    return None
 
-terminal_title() {
-	printf "\033]0;$@\007"
-}
+def fprint(fmt, *args):
+    sys.stdout.write(fmt.format(*args))
 
-terminal_title "vpn.$key"
+def check_latest():
+    # make request for latest version
+    pass
 
-if [ `id -u` != 0 ]; then
-	sname=$(basename $0)
-	script=$sbase/$sname
-	echo "==> Switching to root with sudo..."
-	exec sudo $script $key $base
-else
-	umask 077
-	export PATH=/usr/local/sbin:/usr/local/bin:$PATH
-	echo -n "==> Auth Key credentials in "
-	secretfile=$(grep auth-user-pass $key.ovpn | awk '{print $2}')
-	if ! gpg -d $secretfile.gpg > $secretfile; then
-		 exit 1
-	fi
-	printf "==> MFA Authentication at $(date)\nEnter Security Code: "
-	read -s otp_pass
-	printf "\r                    \r\n"
-	sed -i -e "s/%{OTP}$/$otp_pass/g" $secretfile
+# sudo
+def run_as_root(key, cfg):
+    if os.getuid() == 0:
+        return
 
-	cleanup() {
-		sleep 10
-#		if [ $(ps -fp "$$" | grep vpnstart) ]; then
-#			rm -f "$secretfile"
-#		fi
-	 	rm -f "$secretfile"
-	}
-	cleanup &
+    # find the real base, for easier sudo rules
+    owd = os.getcwd()
+    script = os.path.basename(__file__)
+    dirname = os.path.dirname(__file__)
+    os.chdir(dirname)
+    basedir = os.getcwd()
+    spath = basedir + "/" + script
+    sudo = which("sudo")
+    if not sudo:
+        sys.exit("Cannot find 'sudo'")
 
-	openvpn --config $key.ovpn
-fi
+    fprint("==> Switching to root with sudo...\n")
+    os.execv(sudo, [sudo, spath, key, cfg])
+
+def run(cmd):
+    sys.stdout.flush()
+    if type(cmd) == list:
+        shell = False
+    else:
+        shell = True
+    sub = subprocess.call(cmd, shell=shell)
+    sys.stdout.flush()
+    if sub:
+        sys.exit(sub)
+
+def get_key(cfgdir, keycfg):
+    keys = set()
+    for file in os.listdir(cfgdir):
+        if file[-5:] == ".ovpn":
+            keys.add(file[:-5])
+
+    if not keycfg:
+        if len(keys) == 1:
+            fprint("No key specified, defaulting to {}", keys[0])
+            return keys[0]
+        sys.exit("Specify a key to use: " + ", ".join(list(keys)))
+    if keycfg not in keys:
+        sys.exit("Invalid key '" + keycfg + "', specify one of: " +
+                 ", ".join(list(keys)))
+    return keycfg
+
+def terminal_title(title):
+    fprint("\033]0;{}\007", title)
+
+def readcmd(path, matches):
+    cmdline = list()
+    if not os.path.exists(path):
+        return
+    matched = False
+    with open(path) as infile:
+        for part in infile.read().split("\000"):
+            if part:
+                cmdline.append(part)
+                if matches in part:
+                    matched = True
+    if matched:
+        return cmdline
+
+def cleanup(authfile, pcmd):
+    time.sleep(10)
+    pproc = "/proc/{}/cmdline".format(os.getppid())
+    if os.path.exists(pproc):
+        cmd = readcmd("/proc/{}/cmdline".format(os.getppid()), "openvpn")
+        if cmd != pcmd:
+            return
+    else:
+        for pid in os.listdir("/proc"):
+            found = False
+            cmd = readcmd("/proc/" + str(pid), "openvpn")
+            if cmd == pcmd:
+                return
+
+    os.unlink(authfile)
+
+def main():
+    check_latest()
+
+    keycfg, cfgdir = (sys.argv + [None, None])[1:3]
+    if not cfgdir:
+        cfgdir = os.path.expanduser("~/.ovpn")
+    if not os.path.exists(cfgdir):
+        sys.exit("Cannot find config dir ~/.ovpn")
+
+    key = get_key(cfgdir, keycfg)
+
+    run_as_root(key, cfgdir)
+
+    terminal_title("vpn." + key)
+
+    # be certain /usr/local is in path
+    os.environ['PATH'] = "/usr/local/sbin:/usr/local/bin:" + os.environ['PATH']
+    os.chdir(cfgdir)
+
+    # get the auth path
+    authfile = None
+    with open(key + ".ovpn") as cfg:
+        for line in cfg:
+            match = re.search(r'^\s*auth-user-pass\s*(.*)\s*$', line)
+            if match:
+                authfile = match.group(1)
+                break
+    if not authfile:
+        sys.exit("Unable to find auth-user-pass in " + key + ".ovpn!")
+
+    fprint("==> Auth Key credentials in ")
+    run("gpg -d " + authfile + ".gpg > " + authfile + ".tmp")
+
+    fprint("\n==> MFA Authentication\n\nEnter Security Code: ")
+    otp = re.sub(r'[^0-9]', '', input())
+    fprint("\r                    \r\n")
+
+    with open(authfile + ".tmp") as infile, open(authfile, "w") as outfile:
+        for line in infile:
+            outfile.write(line.replace("%{OTP}", otp))
+
+    os.unlink(authfile + ".tmp")
+
+    cmd = [which("openvpn"), "--config", key + ".ovpn"]
+
+    proc = Process(target=cleanup, args=(authfile, cmd))
+    proc.start()
+
+    print(">>> " + " ".join(cmd))
+    os.execv(cmd[0], cmd)
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
 
