@@ -116,8 +116,36 @@ def cleanup(authfile, pcmd):
 
     os.unlink(authfile)
 
+def setup_auth():
+    opt, fname = (sys.argv + [None, None])[1:3]
+
+    if not fname:
+        sys.exit("Syntax: vpnstart --newauth FILENAME")
+    cfgdir = os.path.expanduser("~/.ovpn")
+    if not os.path.exists(cfgdir):
+        sys.exit("Cannot find ocnfig dir ~/.ovpn")
+    os.chdir(cfgdir)
+
+    fprint("\n==> Username: ")
+    authuser = input()
+    run("stty -echo")
+    fprint("\n==> Password: ")
+    authpass = input()
+    fprint("\n")
+    run("stty echo")
+    with open(fname, "w") as outfile:
+        outfile.write(authuser)
+        outfile.write("\n")
+        outfile.write(authpass + "%{OTP}\n")
+    fprint("\n==> Encrypting, CHOOSE A STRONG PASSPHRASE\n")
+    run("gpg -c " + fname)
+    os.unlink(fname)
+
 def main():
     check_latest()
+
+    if sys.argv and sys.argv[1] == "--newauth":
+        return setup_auth()
 
     keycfg, cfgdir = (sys.argv + [None, None])[1:3]
     if not cfgdir:
@@ -171,5 +199,6 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
+        run("stty echo")
         pass
 
