@@ -15,7 +15,10 @@ import os.path
 import re
 import subprocess
 import time
-import requests
+try:
+    import requests
+except:
+    sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
 
 # python 2/3 compat
@@ -46,6 +49,8 @@ def run_as_root(key, cfg):
     owd = os.getcwd()
     script = os.path.basename(__file__)
     dirname = os.path.dirname(__file__)
+    if not dirname:
+        dirname = '.'
     os.chdir(dirname)
     basedir = os.getcwd()
     spath = basedir + "/" + script
@@ -144,7 +149,7 @@ def setup_auth():
 def main():
     check_latest()
 
-    if sys.argv and sys.argv[1] == "--newauth":
+    if len(sys.argv) > 1 and sys.argv[1] == "--newauth":
         return setup_auth()
 
     keycfg, cfgdir = (sys.argv + [None, None])[1:3]

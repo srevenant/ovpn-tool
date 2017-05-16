@@ -19,7 +19,11 @@ Put your config and files in this location.  Supports multiple config, with the 
 
 ### Setup secured auth delegation
 
-You can configure an encrypted passfile using GPG.  First, create a base file such as `onelogin.auth` and format it as:
+vpnstart supports wrapping a username/password with a one time password (OTP/MFA), where this file is secured with gpg encryption.  You can easily generate this file with vpnstart (if authpass.txt is your auth credentials file):
+
+	vpnstart --newauth authpass.txt
+
+And the tool will take care of the rest.  If you want to create it by hand, you can do it as well.  First, create a base file such as `authpass.txt` and format it as:
 
 	username
 	password%{OTP}
@@ -32,7 +36,7 @@ Then encrypt this file with a strong passphrase (multiple character types, over 
 
 Add to your configuration ({name}.ovpn)
 
-	auth-user-pass {name}.auth
+	auth-user-pass authpass.txt
 	up /etc/openvpn/update-resolv-conf
 	down /etc/openvpn/update-resolv-conf
 	script-security 2
