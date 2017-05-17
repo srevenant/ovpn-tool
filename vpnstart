@@ -21,7 +21,7 @@ except:
     sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
 
-VERSION = "1702.1619" #:VERSION:
+VERSION = "1702.1708" #:VERSION:
 
 # python 2/3 compat
 try:
@@ -221,7 +221,7 @@ def main():
     proc = Process(target=cleanup, args=(authfile, cmd))
     proc.start()
 
-    print(">>> " + " ".join(cmd))
+    print(">>> " + " ".join(cmd) . "\n")
     os.execv(cmd[0], cmd)
 
 if __name__ == '__main__':
