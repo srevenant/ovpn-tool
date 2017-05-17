@@ -1,6 +1,6 @@
 #!/bin/bash
 
-v=$(date +%y%M.%d%H)
+v=$(date +%y%m.%d%H)
 echo $v > ver
 
 sed -i -e 's/^VERSION = .*:VERSION:/VERSION = "'$v'" #:VERSION:/' vpnstart 
