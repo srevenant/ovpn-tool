@@ -10,7 +10,7 @@ Easy install:
 
 	dnf -y install openvpn gpg
 
-	curl -sO https://raw.github.com/srevenant/ovpn-tool/master/get.sh; sudo bash ./get.sh
+	curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
 
 Manual install (i.e. if you cloned the repo):
 

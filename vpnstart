@@ -21,7 +21,7 @@ except:
     sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
 
-VERSION = "1753.1618" #:VERSION:
+VERSION = "1702.1619" #:VERSION:
 
 # python 2/3 compat
 try:
@@ -57,7 +57,12 @@ def check_latest():
         vers = infile.read()
 
     if vers != VERSION:
-        fprint("\n!! Version of vpnstart is out of date!  Try:\n\n    curl -sO https://raw.github.com/srevenant/ovpn-tool/master/get.sh; sudo bash ./get.sh\n\n")
+        fprint("""
+!! Version of vpnstart is out of date!  Try:
+
+       curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
+
+""")
 
 # sudo
 def run_as_root(key, cfg):
