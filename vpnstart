@@ -21,6 +21,8 @@ except:
     sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
 
+VERSION = "1716.167" # :VERSION:
+
 # python 2/3 compat
 try:
    input = raw_input
@@ -38,7 +40,20 @@ def fprint(fmt, *args):
 
 def check_latest():
     # make request for latest version
-    pass
+    latest = os.path.expanduser("~/.ovpn/.latest")
+    age = 365 * 24 # random age, 1 year old
+    if os.path.exists(latest):
+        # age in hours since now
+        age = (time.time() - os.path.getmtime(latest)) / 60 / 60
+
+    if age > 24:
+        # last checked?
+        gitraw = "https://raw.github.com/srevenant/ovpn-tool/master/"
+        res = requests.get(gitraw + "ver")
+        if res.content != VERSION:
+            fprint("\n!! Version of vpnstart is out of date!  Try:\n\n    curl -O https://raw.github.com/srevenant/ovpn-tool/master/get.sh; sudo bash ./get.sh\n\n")
+            with open(latest, "w") as out:
+                out.write(res.content)
 
 # sudo
 def run_as_root(key, cfg):
