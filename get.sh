@@ -84,9 +84,12 @@ if [ $errs -gt 0 ]; then
 fi
 
 ################
-echo ""
-echo "=> Installing..."
 gitraw=https://raw.github.com/srevenant/ovpn-tool/master/
+echo ""
+echo -n "=> Installing..."
+download $gitraw/ver -o .ver > /dev/null
+cat .ver
+rm .ver
 
 if [ ! -d ~/.ovpn ]; then
 	mkdir ~/.ovpn
