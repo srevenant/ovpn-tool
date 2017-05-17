@@ -91,10 +91,14 @@ download $gitraw/ver -o .ver > /dev/null
 cat .ver
 rm .ver
 
-if [ ! -d ~/.ovpn ]; then
-	mkdir ~/.ovpn
+if [ -n "$SUDO_USER" ]; then
+    ovpn=$(eval echo ~$SUDO_USER/.ovpn)
+    if [ ! -d $ovpn ]; then
+    	mkdir $ovpn
+    fi
+    rm -f $ovpn/.latest
 fi
-rm -f ~/.ovpn/.latest
+
 rm -f /usr/local/bin/vpnstart /etc/openvpn/update-resolv-conf
 download $gitraw/vpnstart -o /usr/local/bin/vpnstart
 chmod 755 /usr/local/bin/vpnstart
