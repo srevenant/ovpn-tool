@@ -130,7 +130,10 @@ def readcmd(path, matches):
         return cmdline
 
 def cleanup(authfile, pcmd):
-    time.sleep(10)
+    try:
+        time.sleep(10)
+    except:
+        pass
     pproc = "/proc/{}/cmdline".format(os.getppid())
     if os.path.exists(pproc):
         cmd = readcmd("/proc/{}/cmdline".format(os.getppid()), "openvpn")
@@ -221,7 +224,7 @@ def main():
     proc = Process(target=cleanup, args=(authfile, cmd))
     proc.start()
 
-    print(">>> " + " ".join(cmd) . "\n")
+    print(">>> " + " ".join(cmd) + "\n")
     os.execv(cmd[0], cmd)
 
 if __name__ == '__main__':
