@@ -1,6 +1,6 @@
 # OpenVPN tool
 
-Easier and secure Open VPN.
+Easy and simple openvpn wrapper to handle MFA and multiple keys, in linux (sorry, no mac).  YMMV in non-rhel derived OSes.
 
 This is not ideal as it still bounces the username/password off disk, to pass it over to openvpn.
 
