@@ -21,7 +21,7 @@ except:
     sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
 
-VERSION = "1702.1708" #:VERSION:
+VERSION = "1705.1708" #:VERSION:
 
 # python 2/3 compat
 try:
