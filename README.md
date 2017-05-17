@@ -6,10 +6,20 @@ This is not ideal as it still bounces the username/password off disk, to pass it
 
 ## Setup Fedora/CentOS/RHEL Host
 
+Easy install:
+
 	dnf -y install openvpn gpg
+
+	curl -sO https://raw.github.com/srevenant/ovpn-tool/master/get.sh; sudo bash ./get.sh
+
+Manual install (i.e. if you cloned the repo):
+
+	dnf -y install openvpn gpg
+
 	cp update-resolv-conf /etc/openvpn/update-resolv-conf
 	chmod 755 /etc/openvpn/update-resolv-conf
-	cp vpnstart ~/bin
+	cp vpnstart /usr/local/bin
+	chmod 755 /usr/local/bin/vpnstart
 
 ## Setup A key
 
