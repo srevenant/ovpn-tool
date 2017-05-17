@@ -54,7 +54,7 @@ def check_latest():
             out.write(res.content)
 
     with open(latest) as infile:
-        vers = infile.read()
+        vers = infile.read().strip()
 
     if vers != VERSION:
         fprint("""
