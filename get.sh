@@ -88,7 +88,10 @@ echo ""
 echo "=> Installing..."
 gitraw=https://raw.github.com/srevenant/ovpn-tool/master/
 
-cd ~/.ovpn
+if [ ! -d ~/.ovpn ]; then
+	mkdir ~/.ovpn
+fi
+rm -f ~/.ovpn/.latest
 rm -f /usr/local/bin/vpnstart /etc/openvpn/update-resolv-conf
 download $gitraw/vpnstart -o /usr/local/bin/vpnstart
 chmod 755 /usr/local/bin/vpnstart
