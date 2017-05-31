@@ -50,8 +50,10 @@ def check_latest():
         # last checked?
         gitraw = "https://raw.github.com/srevenant/ovpn-tool/master/"
         res = requests.get(gitraw + "ver")
-        with open(latest, "w") as out:
-            out.write(res.content)
+        latest_ver = res.content
+        if re.search(r'^\d+\.\d+$', latest_ver):
+            with open(latest_ver, "w") as out:
+                out.write(latest_ver)
 
     with open(latest) as infile:
         vers = infile.read().strip()
