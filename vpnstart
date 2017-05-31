@@ -52,7 +52,7 @@ def check_latest():
         res = requests.get(gitraw + "ver")
         latest_ver = res.content
         if re.search(r'^\d+\.\d+$', latest_ver):
-            with open(latest_ver, "w") as out:
+            with open(latest, "w") as out:
                 out.write(latest_ver)
 
     with open(latest) as infile:
