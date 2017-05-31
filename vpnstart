@@ -40,11 +40,16 @@ def fprint(fmt, *args):
 
 def check_latest():
     # make request for latest version
-    latest = os.path.expanduser("~/.ovpn/.latest")
+    latest_path = ''
+    if os.environ.get('SUDO_USER'):
+        latest_path = "~" + os.environ['SUDO_USER'] + "/.ovpn/.latest"
+    else:
+        latest_path = "~/.ovpn/.latest"
+    latest_path = os.path.expanduser(latest_path)
     age = 365 * 24 # random age, 1 year old
-    if os.path.exists(latest):
+    if os.path.exists(latest_path):
         # age in hours since now
-        age = (time.time() - os.path.getmtime(latest)) / 60 / 60
+        age = (time.time() - os.path.getmtime(latest_path)) / 60 / 60
 
     if age > 24:
         # last checked?
@@ -52,15 +57,15 @@ def check_latest():
         res = requests.get(gitraw + "ver")
         latest_ver = res.content
         if re.search(r'^\d+\.\d+$', latest_ver):
-            with open(latest, "w") as out:
+            with open(latest_path, "w") as out:
                 out.write(latest_ver)
 
-    with open(latest) as infile:
+    with open(latest_path) as infile:
         vers = infile.read().strip()
 
     if vers != VERSION:
         fprint("""
-!! Version of vpnstart is out of date! ({} != {}) Try:
+!! Version of vpnstart is out of date! (latest={} != current={}) Try:
 
        curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
 
