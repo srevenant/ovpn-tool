@@ -34,6 +34,7 @@ def syntax(*args):
 Syntax: vpnstart {config}
         vpnstart --newauth|--auth|-a {config}
         vpnstart --version|-v
+        vpnstart --update
 
 """)
 
@@ -50,7 +51,7 @@ def which(file):
 def fprint(fmt, *args):
     sys.stdout.write(fmt.format(*args))
 
-def check_latest():
+def check_latest(force=False):
     # make request for latest version
     latest_path = ''
     if os.environ.get('SUDO_USER'):
@@ -63,7 +64,7 @@ def check_latest():
         # age in hours since now
         age = (time.time() - os.path.getmtime(latest_path)) / 60 / 60
 
-    if age > 24:
+    if force or age > 24:
         # last checked?
         gitraw = "https://raw.github.com/srevenant/ovpn-tool/master/"
         res = requests.get(gitraw + "ver")
@@ -225,6 +226,8 @@ def main():
             return syntax()
         elif sys.argv[1] in ["--version", "-v"]:
             return syntax("VERSION=" + VERSION)
+        elif sys.argv[1] in ["--update"]:
+            return check_latest(force=True)
 
     keycfg, cfgdir = (sys.argv + [None, None])[1:3]
     if not cfgdir:
