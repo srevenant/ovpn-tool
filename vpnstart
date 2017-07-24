@@ -21,13 +21,25 @@ except:
     sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
 
-VERSION = "1705.3112" #:VERSION:
+VERSION = "1707.2415" #:VERSION:
 
 # python 2/3 compat
 try:
    input = raw_input
 except NameError:
    pass
+
+def syntax(*args):
+    sys.stderr.write("""
+Syntax: vpnstart {config}
+        vpnstart --newauth|--auth|-a {config}
+        vpnstart --version|-v
+
+""")
+
+    if args:
+        sys.stderr.write("! " + args[0] + "\n\n")
+    sys.exit(1)
 
 def which(file):
     for path in os.environ["PATH"].split(os.pathsep):
@@ -87,7 +99,7 @@ def run_as_root(key, cfg):
     spath = basedir + "/" + script
     sudo = which("sudo")
     if not sudo:
-        sys.exit("Cannot find 'sudo'")
+        syntax("Cannot find 'sudo'")
 
     fprint("==> Switching to root with sudo...\n")
     os.execv(sudo, [sudo, spath, key, cfg])
@@ -113,10 +125,10 @@ def get_key(cfgdir, keycfg):
         if len(keys) == 1:
             fprint("No key specified, defaulting to {}", keys[0])
             return keys[0]
-        sys.exit("Specify a key to use: " + ", ".join(list(keys)))
+        syntax("Specify a config to use: " + ", ".join(list(keys)))
     if keycfg not in keys:
-        sys.exit("Invalid key '" + keycfg + "', specify one of: " +
-                 ", ".join(list(keys)))
+        syntax("Invalid config '" + keycfg + "', specify one of: " +
+               ", ".join(list(keys)))
     return keycfg
 
 def terminal_title(title):
@@ -155,15 +167,20 @@ def cleanup(authfile, pcmd):
 
     os.unlink(authfile)
 
-def setup_auth():
-    opt, fname = (sys.argv + [None, None])[1:3]
+def setup_auth(*config):
+    if not config:
+        syntax("Please specify a config for which to change the auth")
 
-    if not fname:
-        sys.exit("Syntax: vpnstart --newauth FILENAME")
     cfgdir = os.path.expanduser("~/.ovpn")
     if not os.path.exists(cfgdir):
-        sys.exit("Cannot find ocnfig dir ~/.ovpn")
+        syntax("Cannot find config dir ~/.ovpn")
+
     os.chdir(cfgdir)
+
+    key = get_key(cfgdir, config[0])
+    fname = get_authfile(cfgdir + "/" + key)
+
+    print("Updating auth-user-pass: {}".format(fname))
 
     fprint("\n==> Username: ")
     authuser = input()
@@ -172,6 +189,12 @@ def setup_auth():
     authpass = input()
     fprint("\n")
     run("stty echo")
+
+    if os.path.exists(fname):
+        os.unlink(fname)
+    if os.path.exists(fname + ".gpg"):
+        os.unlink(fname + ".gpg")
+
     with open(fname, "w") as outfile:
         outfile.write(authuser)
         outfile.write("\n")
@@ -180,17 +203,34 @@ def setup_auth():
     run("gpg -c " + fname)
     os.unlink(fname)
 
+def get_authfile(config):
+    authfile = None
+    with open(config + ".ovpn") as cfg:
+        for line in cfg:
+            match = re.search(r'^\s*auth-user-pass\s*(.*)\s*$', line)
+            if match:
+                authfile = match.group(1)
+                break
+    if not authfile:
+        syntax("Unable to find auth-user-pass in " + config + ".ovpn!")
+    return authfile
+
 def main():
     check_latest()
 
-    if len(sys.argv) > 1 and sys.argv[1] == "--newauth":
-        return setup_auth()
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ["--newauth", "--auth", "-a"]:
+            return setup_auth(*sys.argv[2:])
+        elif sys.argv[1] in ["--help", "-h"]:
+            return syntax()
+        elif sys.argv[1] in ["--version", "-v"]:
+            return syntax("VERSION=" + VERSION)
 
     keycfg, cfgdir = (sys.argv + [None, None])[1:3]
     if not cfgdir:
         cfgdir = os.path.expanduser("~/.ovpn")
     if not os.path.exists(cfgdir):
-        sys.exit("Cannot find config dir ~/.ovpn")
+        syntax("Cannot find config dir ~/.ovpn")
 
     key = get_key(cfgdir, keycfg)
 
@@ -203,15 +243,7 @@ def main():
     os.chdir(cfgdir)
 
     # get the auth path
-    authfile = None
-    with open(key + ".ovpn") as cfg:
-        for line in cfg:
-            match = re.search(r'^\s*auth-user-pass\s*(.*)\s*$', line)
-            if match:
-                authfile = match.group(1)
-                break
-    if not authfile:
-        sys.exit("Unable to find auth-user-pass in " + key + ".ovpn!")
+    authfile = get_authfile(key)
 
     fprint("==> Auth Key credentials in ")
     run("gpg -d " + authfile + ".gpg > " + authfile + ".tmp")
