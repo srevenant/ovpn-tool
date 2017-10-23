@@ -15,11 +15,15 @@ import os.path
 import re
 import subprocess
 import time
+import tempfile
+import shutil
 try:
     import requests
 except:
     sys.exit("Unable to find 'requests' library, try:\n\tsudo pip install requests")
 from multiprocessing import Process
+
+CLEANUP = []
 
 VERSION = "1707.2415" #:VERSION:
 
@@ -28,6 +32,15 @@ try:
    input = raw_input
 except NameError:
    pass
+
+def my_exit(*status):
+    for f in CLEANUP:
+        if os.path.exists(f):
+            try:
+                os.unlink(f)
+            except Exception as err:
+                print("cannot unlink: " + str(err))
+    sys.exit(*status)
 
 def syntax(*args):
     sys.stderr.write("""
@@ -39,7 +52,7 @@ Syntax: vpnstart {config}
 
     if args:
         sys.stderr.write("! " + args[0] + "\n\n")
-    sys.exit(1)
+    my_exit(1)
 
 def which(file):
     for path in os.environ["PATH"].split(os.pathsep):
@@ -113,7 +126,7 @@ def run(cmd):
     sub = subprocess.call(cmd, shell=shell)
     sys.stdout.flush()
     if sub:
-        sys.exit(sub)
+        my_exit(sub)
 
 def get_key(cfgdir, keycfg):
     keys = set()
@@ -153,23 +166,23 @@ def cleanup(authfile, pcmd):
         time.sleep(10)
     except:
         pass
-    pproc = "/proc/{}/cmdline".format(os.getppid())
-    if os.path.exists(pproc):
-        cmd = readcmd("/proc/{}/cmdline".format(os.getppid()), "openvpn")
-        if cmd != pcmd:
-            return
-    else:
-        for pid in os.listdir("/proc"):
-            found = False
-            cmd = readcmd("/proc/" + str(pid), "openvpn")
-            if cmd == pcmd:
-                return
+#    pproc = "/proc/{}/cmdline".format(os.getppid())
+#    if os.path.exists(pproc):
+#        cmd = readcmd("/proc/{}/cmdline".format(os.getppid()), "openvpn")
+#        if cmd != pcmd:
+#            return
+#    else:
+#        for pid in os.listdir("/proc"):
+#            found = False
+#            cmd = readcmd("/proc/" + str(pid), "openvpn")
+#            if cmd == pcmd:
+#                return
+#
+    my_exit()
 
-    os.unlink(authfile)
-
-def setup_auth(*config):
-    if not config:
-        syntax("Please specify a config for which to change the auth")
+def setup_auth(*auth):
+    if not auth:
+        syntax("Please specify an auth gpg file")
 
     cfgdir = os.path.expanduser("~/.ovpn")
     if not os.path.exists(cfgdir):
@@ -177,8 +190,14 @@ def setup_auth(*config):
 
     os.chdir(cfgdir)
 
-    key = get_key(cfgdir, config[0])
-    fname = get_authfile(cfgdir + "/" + key)
+    #key = get_key(cfgdir, auth[0])
+    if os.path.exists(auth[0]):
+        fname = auth[0]
+    elif os.path.exists("./" + auth[0]):
+        fname = "./" + auth[0]
+
+    if fname[-4:] == ".gpg":
+        fname = fname[:-4]
 
     print("Updating auth-user-pass: {}".format(fname))
 
@@ -203,17 +222,26 @@ def setup_auth(*config):
     run("gpg -c " + fname)
     os.unlink(fname)
 
-def get_authfile(config):
+def prep_authfile(config):
+    cfile = tempfile.NamedTemporaryFile(dir=".", delete=False, prefix=".tmp.")
+    CLEANUP.append(cfile.name)
     authfile = None
     with open(config + ".ovpn") as cfg:
         for line in cfg:
             match = re.search(r'^\s*auth-user-pass\s*(.*)\s*$', line)
             if match:
-                authfile = match.group(1)
-                break
+                authmatch = match.group(1)
+                afile = tempfile.NamedTemporaryFile(dir=".", delete=True, prefix=".tmp.")
+                authfile = afile.name
+                # we just need the name
+                shutil.copyfile(authmatch + ".gpg", authfile + ".gpg")
+                line = "auth-user-pass " + authfile + "\n"
+                CLEANUP.append(authfile)
+                CLEANUP.append(authfile + ".gpg")
+            cfile.write(line)
     if not authfile:
         syntax("Unable to find auth-user-pass in " + config + ".ovpn!")
-    return authfile
+    return cfile.name, authfile
 
 def main():
     check_latest()
@@ -241,11 +269,13 @@ def main():
     # be certain /usr/local is in path
     os.environ['PATH'] = "/usr/local/sbin:/usr/local/bin:" + os.environ['PATH']
     os.chdir(cfgdir)
+    os.umask(077)
 
     # get the auth path
-    authfile = get_authfile(key)
+    cfgfile, authfile = prep_authfile(key)
 
     fprint("==> Auth Key credentials in ")
+    CLEANUP.append(authfile + ".tmp")
     run("gpg -d " + authfile + ".gpg > " + authfile + ".tmp")
 
     fprint("\n==> MFA Authentication\n\nEnter Security Code: ")
@@ -258,7 +288,7 @@ def main():
 
     os.unlink(authfile + ".tmp")
 
-    cmd = [which("openvpn"), "--config", key + ".ovpn"]
+    cmd = [which("openvpn"), "--config", cfgfile]
 
     proc = Process(target=cleanup, args=(authfile, cmd))
     proc.start()
@@ -272,4 +302,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         run("stty echo")
         pass
+    my_exit()
 
