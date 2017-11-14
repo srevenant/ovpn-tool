@@ -25,7 +25,7 @@ from multiprocessing import Process
 
 CLEANUP = []
 
-VERSION = "1711.1411" #:VERSION:
+VERSION = "1711.1413" #:VERSION:
 
 # python 2/3 compat
 try:
@@ -45,7 +45,7 @@ def my_exit(*status):
 def syntax(*args):
     sys.stderr.write("""
 Syntax: vpnstart {config}
-        vpnstart --newauth|--auth|-a {config}
+        vpnstart --newauth|--auth|-a {~/.ovpn/auth-config-file.gpg}
         vpnstart --version|-v
 
 """)
@@ -184,23 +184,28 @@ def setup_auth(*auth):
     if not auth:
         syntax("Please specify an auth gpg file")
 
-    cfgdir = os.path.expanduser("~/.ovpn")
+    cfgdir = os.path.expanduser("~/.ovpn/")
     if not os.path.exists(cfgdir):
-        syntax("Cannot find config dir ~/.ovpn")
+        syntax("Cannot find config dir ~/.ovpn/")
 
     os.chdir(cfgdir)
 
-    if os.path.exists(auth[0]):
-        fname = auth[0]
-    elif os.path.exists("./" + auth[0]):
-        fname = "./" + auth[0]
-    else:
-        syntax("Cannot find {} in ~/.ovpn".format(auth[0]))
+    clen = len(cfgdir)
+    fname = auth[0]
+    if fname[:clen] == cfgdir:
+        fname = fname[clen:]
 
-    if fname[-4:] == ".gpg":
-        fname = fname[:-4]
+    if fname[-4:] != ".gpg":
+        fname += ".gpg"
 
-    print("Updating auth-user-pass: {}".format(fname))
+    if not os.path.exists(fname):
+        print("Creating new auth file: " + fname)
+        time.sleep(2)
+
+    # now take off the .gpg
+    fname = fname[:-4]
+
+    print("auth-user-pass file: {}".format(fname))
 
     fprint("\n==> Username: ")
     authuser = input()
