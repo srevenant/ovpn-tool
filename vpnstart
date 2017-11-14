@@ -190,11 +190,12 @@ def setup_auth(*auth):
 
     os.chdir(cfgdir)
 
-    #key = get_key(cfgdir, auth[0])
     if os.path.exists(auth[0]):
         fname = auth[0]
     elif os.path.exists("./" + auth[0]):
         fname = "./" + auth[0]
+    else:
+        syntax("Cannot find {} in ~/.ovpn".format(auth[0]))
 
     if fname[-4:] == ".gpg":
         fname = fname[:-4]
