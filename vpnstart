@@ -232,6 +232,7 @@ def prep_authfile(config):
     cfile = tempfile.NamedTemporaryFile(dir=".", delete=False, prefix=".tmp.")
     CLEANUP.append(cfile.name)
     authfile = None
+    authmatch = ''
     with open(config + ".ovpn") as cfg:
         for line in cfg:
             match = re.search(r'^\s*auth-user-pass\s*(.*)\s*$', line)
@@ -247,7 +248,7 @@ def prep_authfile(config):
             cfile.write(line)
     if not authfile:
         syntax("Unable to find auth-user-pass in " + config + ".ovpn!")
-    return cfile.name, authfile
+    return cfile.name, authfile, authmatch
 
 def main():
     check_latest()
@@ -278,11 +279,19 @@ def main():
     os.umask(077)
 
     # get the auth path
-    cfgfile, authfile = prep_authfile(key)
+    cfgfile, authfile, authorigin = prep_authfile(key)
 
     fprint("==> Auth Key credentials in ")
     CLEANUP.append(authfile + ".tmp")
     run("gpg -d " + authfile + ".gpg > " + authfile + ".tmp")
+
+    with open(authfile + ".tmp") as authf:
+        line1 = authf.readline()
+        line2 = authf.readline()
+        fprint("\n==> Using " + authorigin + " credentials:\n")
+        fprint("\n\tUsername: {}", line1)
+        if len(line2) < 7:
+            fprint("\tWARNING: Password might be too small!\n")
 
     fprint("\n==> MFA Authentication\n\nEnter Security Code: ")
     otp = re.sub(r'[^0-9]', '', input())
