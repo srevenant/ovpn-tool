@@ -1,6 +1,6 @@
 # OpenVPN tool
 
-Easy and simple openvpn wrapper to handle MFA and multiple keys, in linux (sorry, no mac).  YMMV in non-rhel derived OSes.
+Easy and simple openvpn wrapper to handle MFA and multiple keys, in linux (sorry, no mac at this time).  YMMV in non-rhel derived OSes.
 
 This is not ideal as it still bounces the username/password off disk, to pass it over to openvpn.
 
@@ -10,20 +10,20 @@ Install:
 
 1. Install the software
 
-	dnf -y install openvpn gpg
-	curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
+    	dnf -y install openvpn gpg
+    	curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
 
 2. Put your openvpn configs & certs into ~/.ovpn.  Supports {name}.ovpn, can handle multiple profiles.
 
 3. Setup your secured password (encrypted w/pgp) - this is referenced in your {name.ovpn} config file as `auth-user-pass authpass.txt`:
 
-	vpnstart --newauth ~/.ovpn/authpass.txt
+    	vpnstart --newauth ~/.ovpn/authpass.txt
 
-(see note below for more info)
+    (see note below for more info)
 
 4. Run vpnstart:
 
-    vpnstart {name}
+        vpnstart {name}
 
 
 ## A note on wrapping password
