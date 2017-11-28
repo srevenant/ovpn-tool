@@ -63,10 +63,13 @@ echo "=> Checking environment..."
 
 # support a few diff pkg managers
 if host_has yum; then
-    pkgs="gpg openvpn python"
+    pkgs="gpg openvpn python python2-pip"
+    echo "=> Enabling epel-release..."
+    yum -y install epel-release > /dev/null 2>&1
+
     pkg_add() {
       if ! rpm -q $1 >/dev/null 2>&1; then
-          echo "=> Installing missing prerequisite package `$1`"
+          echo "=> Installing missing prerequisite package '$1'"
           yum -y install $1 || exit 1
       fi
     }
@@ -78,7 +81,7 @@ elif host_has apt; then
               did_update=1
               apt update
           fi
-          echo "=> Installing missing prerequisite package `$1`"
+          echo "=> Installing missing prerequisite package '$1'"
           apt -y install $1 || exit 1
       fi
     }

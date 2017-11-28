@@ -8,18 +8,9 @@ This is not ideal as it still bounces the username/password off disk, to pass it
 
 Install:
 
-1. Install the software
+1. Install the software (rhel/centos/fedora/debian/ubuntu):
 
-    (yum/dnf style rhel/centos)
-
-    	yum -y install openvpn gpg
     	curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
-
-    (apt style ubuntu)
-
-    	apt update && apt install -y openvpn gpgv2
-    	curl -LOfs http://vpnstart.cold.org/get.sh && sudo bash ./get.sh
-
 
 2. Put your openvpn configs & certs into ~/.ovpn.  Supports {name}.ovpn, can handle multiple profiles.
 
