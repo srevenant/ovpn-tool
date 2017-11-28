@@ -1,4 +1,4 @@
-# VPNstart
+# vpnstart
 
 Easy and simple openvpn wrapper to handle MFA and multiple keys, in Linux.
 
