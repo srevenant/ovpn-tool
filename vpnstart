@@ -25,7 +25,7 @@ from multiprocessing import Process
 
 CLEANUP = []
 
-VERSION = "1711.1509" #:VERSION:
+VERSION = "1711.2812" #:VERSION:
 
 # python 2/3 compat
 try:
