@@ -3,7 +3,9 @@
 { # this ensures the entire script is downloaded #
 
 msg() {
-	echo >&2 "$@"
+    echo ""
+	echo >&2 "==> $@"
+    echo ""
 }
 
 download() {
@@ -35,10 +37,12 @@ cmd() {
 		msg "$label"
 	fi
 
-	"$@" || {
-		echo >&2 "Unable to run: $@"
+	output=$("$@")
+    if [ $? -gt 0 ]; then
+        echo "$output"
+		msg "ABORT: Unable to run: $@"
 		exit 1
-	}
+	fi
 }
 
 host_has() {
@@ -58,18 +62,17 @@ END
 
 ################
 # prep
-echo ""
-echo "=> Checking environment..."
+msg "Checking environment..."
 
 # support a few diff pkg managers
 if host_has yum; then
-    echo "=> Enabling epel-release..."
-    yum -y install epel-release > /dev/null 2>&1
+    msg "Enabling epel-release..."
+    cmd yum -y install epel-release > /dev/null 2>&1
 
     pkg_add() {
       if ! rpm -q $1 >/dev/null 2>&1; then
-          echo "=> Installing missing prerequisite package '$1'"
-          yum -y install $1 || exit 1
+          msg "Installing missing prerequisite package '$1'"
+          cmd yum -y install $1
       fi
     }
     pkgs="gpg openvpn python python2-pip perl"
@@ -79,10 +82,11 @@ elif host_has apt; then
       if ! dpg -l $1 >/dev/null 2>&1; then
           if [ ! $did_update ]; then
               did_update=1
+              msg "updating apt cache"
               apt update
           fi
-          echo "=> Installing missing prerequisite package '$1'"
-          apt -y install $1 || exit 1
+          msg "Installing missing prerequisite package '$1'"
+          cmd apt -y install $1
       fi
     }
     pkgs="gpgv2 openvpn python python-pip perl"
@@ -116,8 +120,7 @@ fi
 
 ################
 gitraw=https://raw.github.com/srevenant/vpnstart/master/
-echo ""
-echo -n "=> Installing..."
+msg "Installing..."
 download $gitraw/ver -o .ver > /dev/null
 cat .ver
 rm .ver
@@ -136,9 +139,7 @@ chmod 755 /usr/local/bin/vpnstart
 download $gitraw/update-resolv-conf -o /etc/openvpn/update-resolv-conf
 chmod 755 /etc/openvpn/update-resolv-conf
 
-echo ""
-echo "=> Done"
-echo ""
+msg "Done"
 
 } # this ensures the entire script is downloaded #
 
