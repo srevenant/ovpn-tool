@@ -37,7 +37,7 @@ cmd() {
 		msg "$label"
 	fi
 
-	output=$("$@")
+	output=$("$@" 2>&1)
     if [ $? -gt 0 ]; then
         echo "$output"
 		msg "ABORT: Unable to run: $@"
