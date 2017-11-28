@@ -84,7 +84,7 @@ if [ $errs -gt 0 ]; then
 fi
 
 ################
-gitraw=https://raw.github.com/srevenant/ovpn-tool/master/
+gitraw=https://raw.github.com/srevenant/vpnstart/master/
 echo ""
 echo -n "=> Installing..."
 download $gitraw/ver -o .ver > /dev/null

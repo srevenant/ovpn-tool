@@ -25,7 +25,7 @@ from multiprocessing import Process
 
 CLEANUP = []
 
-VERSION = "1711.1509" #:VERSION:
+VERSION = "1711.2807" #:VERSION:
 
 # python 2/3 compat
 try:
@@ -78,7 +78,7 @@ def check_latest(force=False):
 
     if force or age > 24:
         # last checked?
-        gitraw = "https://raw.github.com/srevenant/ovpn-tool/master/"
+        gitraw = "https://raw.github.com/srevenant/vpnstart/master/"
         res = requests.get(gitraw + "ver")
         latest_ver = res.content
         if re.search(r'^\d+\.\d+$', latest_ver):
