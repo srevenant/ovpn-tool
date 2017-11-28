@@ -65,7 +65,7 @@ msg "Checking environment"
 
 # support a few diff pkg managers
 if host_has yum; then
-    yum -y install epel-release > /dev/null  2>&1
+    yum -y install epel-release > /dev/null 2>&1
 
     pkg_add() {
       if ! rpm -q $1 >/dev/null 2>&1; then
