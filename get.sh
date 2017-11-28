@@ -3,8 +3,7 @@
 { # this ensures the entire script is downloaded #
 
 msg() {
-    echo ""
-	echo >&2 "==> $@"
+    echo >&2 "... $@"
     echo ""
 }
 
@@ -25,24 +24,24 @@ download() {
 }
 
 die() {
-	echo >&2 $*
-	exit 1
+    echo >&2 $*
+    exit 1
 }
 
 cmd() {
-	label="$1"
-	shift
+    label="$1"
+    shift
 
-	if [ -n "$label" ]; then
-		msg "$label"
-	fi
+    if [ -n "$label" ]; then
+        msg "$label"
+    fi
 
-	output=$("$@" 2>&1)
+    output=$("$@" 2>&1)
     if [ $? -gt 0 ]; then
         echo "$output"
-		msg "ABORT: Unable to run: $@"
-		exit 1
-	fi
+        msg "ABORT: Unable to run: $@"
+        exit 1
+    fi
 }
 
 host_has() {
@@ -51,18 +50,18 @@ host_has() {
 
 has_cmd() {
     name="$1"
-	if ! host_has $name ; then
-		cat <<END
+    if ! host_has $name ; then
+        cat <<END
 
 => MISSING Pre-Requisite: You need \`$name\`
 END
-		let errs++
-	fi
+        let errs++
+    fi
 }
 
 ################
 # prep
-msg "Checking environment..."
+msg "Checking environment"
 
 # support a few diff pkg managers
 if host_has yum; then
@@ -75,7 +74,7 @@ if host_has yum; then
             yum -y install $1
       fi
     }
-    pkgs="gpg openvpn python python2-pip perl"
+    pkgs="gnupg2 openvpn python python2-pip perl"
 elif host_has apt; then
     did_update=
     pkg_add() {
@@ -104,13 +103,13 @@ has_cmd perl
 if has_cmd python; then
     if has_cmd pip; then
         if ! python -c 'import requests' >/dev/null 2>&1; then
-        	echo "installing requests module..."
-        	pip install requests
+            cmd "installing requests module" \
+                pip install requests
         fi
     fi
 fi
 if [ $errs -gt 0 ]; then
-	exit 1
+    exit 1
 fi
 
 if [ ! -d ~/.ovpn ]; then
@@ -120,15 +119,13 @@ fi
 
 ################
 gitraw=https://raw.github.com/srevenant/vpnstart/master/
-msg "Installing..."
 download $gitraw/ver -o .ver > /dev/null
-cat .ver
-rm .ver
+msg "Installing vpnstart $(cat .ver)"
 
 if [ -n "$SUDO_USER" ]; then
     ovpn=$(eval echo ~$SUDO_USER/.ovpn)
     if [ ! -d $ovpn ]; then
-    	mkdir $ovpn
+        mkdir $ovpn
     fi
     rm -f $ovpn/.latest
 fi
@@ -139,6 +136,7 @@ chmod 755 /usr/local/bin/vpnstart
 download $gitraw/update-resolv-conf -o /etc/openvpn/update-resolv-conf
 chmod 755 /etc/openvpn/update-resolv-conf
 
+echo 
 msg "Done"
 
 } # this ensures the entire script is downloaded #
