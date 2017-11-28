@@ -66,13 +66,13 @@ msg "Checking environment..."
 
 # support a few diff pkg managers
 if host_has yum; then
-    msg "Enabling epel-release..."
-    cmd yum -y install epel-release > /dev/null 2>&1
+    cmd "Enabling epel-release" \
+      yum -y install epel-release
 
     pkg_add() {
       if ! rpm -q $1 >/dev/null 2>&1; then
-          msg "Installing missing prerequisite package '$1'"
-          cmd yum -y install $1
+          cmd "Installing missing prerequisite package '$1'"\
+            yum -y install $1
       fi
     }
     pkgs="gpg openvpn python python2-pip perl"
@@ -82,11 +82,11 @@ elif host_has apt; then
       if ! dpg -l $1 >/dev/null 2>&1; then
           if [ ! $did_update ]; then
               did_update=1
-              msg "updating apt cache"
-              apt update
+              cmd "updating apt cache" \
+                apt update
           fi
-          msg "Installing missing prerequisite package '$1'"
-          cmd apt -y install $1
+          cmd "Installing missing prerequisite package '$1'" \
+            apt -y install $1
       fi
     }
     pkgs="gpgv2 openvpn python python-pip perl"
