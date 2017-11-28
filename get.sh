@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
-#
-# some parts shamelessly borrowed from NVM
-#
 
 { # this ensures the entire script is downloaded #
 
 msg() {
 	echo >&2 "$@"
-}
-
-host_has() {
-  type "$1" > /dev/null 2>&1
 }
 
 download() {
@@ -48,6 +41,10 @@ cmd() {
 	}
 }
 
+host_has() {
+  type "$1" > /dev/null 2>&1
+}
+
 has_cmd() {
     name="$1"
 	if ! host_has $name ; then
@@ -59,16 +56,40 @@ END
 	fi
 }
 
-if [ ! -d ~/.ovpn ]; then
-    mkdir ~/.ovpn
-    chmod 700 ~/.ovpn
-fi
-
 ################
 # prep
 echo ""
 echo "=> Checking environment..."
+
+# support a few diff pkg managers
+if host_has yum; then
+    pkgs="gpg openvpn"
+    pkg_add() {
+      if ! rpm -q $1 >/dev/null 2>&1; then
+          yum -y install $1 || exit 1
+      fi
+    }
+elif host_has apt; then
+    did_update=
+    pkg_add() {
+      if ! dpg -l $1 >/dev/null 2>&1; then
+          if [ ! $did_update ]; then
+              did_update=1
+              apt update
+          fi
+          apt -y install $1 || exit 1
+      fi
+    }
+    pkgs="gpgv2 openvpn"
+else
+    echo "Cannot determine package manager type (supports yum and apt)"
+    exit 1
+fi
+
 errs=0
+for pkg in $pkgs; do
+    pkg_add $pkg
+done
 
 has_cmd perl
 if has_cmd python; then
@@ -81,6 +102,11 @@ if has_cmd python; then
 fi
 if [ $errs -gt 0 ]; then
 	exit 1
+fi
+
+if [ ! -d ~/.ovpn ]; then
+    mkdir ~/.ovpn
+    chmod 700 ~/.ovpn
 fi
 
 ################
@@ -104,7 +130,6 @@ download $gitraw/vpnstart -o /usr/local/bin/vpnstart
 chmod 755 /usr/local/bin/vpnstart
 download $gitraw/update-resolv-conf -o /etc/openvpn/update-resolv-conf
 chmod 755 /etc/openvpn/update-resolv-conf
-
 
 echo ""
 echo "=> Done"
