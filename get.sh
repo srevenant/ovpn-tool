@@ -50,7 +50,7 @@ has_cmd() {
 	if ! host_has $name ; then
 		cat <<END
 
---> Pre-Requisite: You need \`$name\`
+=> MISSING Pre-Requisite: You need \`$name\`
 END
 		let errs++
 	fi
@@ -63,7 +63,6 @@ echo "=> Checking environment..."
 
 # support a few diff pkg managers
 if host_has yum; then
-    pkgs="gpg openvpn python python2-pip"
     echo "=> Enabling epel-release..."
     yum -y install epel-release > /dev/null 2>&1
 
@@ -73,6 +72,7 @@ if host_has yum; then
           yum -y install $1 || exit 1
       fi
     }
+    pkgs="gpg openvpn python python2-pip perl"
 elif host_has apt; then
     did_update=
     pkg_add() {
@@ -85,7 +85,7 @@ elif host_has apt; then
           apt -y install $1 || exit 1
       fi
     }
-    pkgs="gpgv2 openvpn python python-pip"
+    pkgs="gpgv2 openvpn python python-pip perl"
 else
     echo "Cannot determine package manager type (supports yum and apt)"
     exit 1
