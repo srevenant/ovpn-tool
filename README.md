@@ -1,8 +1,8 @@
-# OpenVPN tool
+# VPNstart
 
-Easy and simple openvpn wrapper to handle MFA and multiple keys, in linux (sorry, no mac at this time).  YMMV in non-rhel derived OSes.
+Easy and simple openvpn wrapper to handle MFA and multiple keys, in Linux.
 
-This is not ideal as it still bounces the username/password off disk, to pass it over to openvpn.
+This is not ideal as it still bounces the username/password off disk, to pass it over to openvpn, but it keeps it encrypted otherwise.
 
 ## Setup Fedora/CentOS/RHEL Host
 
